@@ -267,7 +267,8 @@ class TaskRepositoryTest {
         // Then
         assertThat(updated.getTitle()).isEqualTo("Updated Title");
         assertThat(updated.getStatus()).isEqualTo(TaskStatus.DONE);
-        assertThat(updated.getCreatedAt()).isEqualTo(originalCreatedAt); // Unchanged
+        // Compare timestamps at millisecond precision (DB may truncate nanoseconds)
+        assertThat(updated.getCreatedAt().toEpochMilli()).isEqualTo(originalCreatedAt.toEpochMilli());
         assertThat(updated.getUpdatedAt()).isAfterOrEqualTo(originalUpdatedAt); // May or may not have changed
     }
 

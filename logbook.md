@@ -4,6 +4,35 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T15:03 – Fix CI Timestamp Precision Issue
+
+**Request (paraphrased):** GitHub Actions pipeline failing with timestamp precision mismatch in `TaskRepositoryTest.testUpdateTask`. PostgreSQL in CI truncates nanosecond precision differently than local H2 database.
+
+**Context/goal:** Test was comparing `Instant` timestamps with exact equality (`isEqualTo`), but PostgreSQL stores `TIMESTAMP WITH TIME ZONE` with microsecond precision (6 digits) while Java `Instant` has nanosecond precision (9 digits). When saved to PostgreSQL and retrieved, the timestamp loses precision, causing assertion failure in CI but passing locally on H2.
+
+**Plan:**
+1. Identify the root cause (database timestamp precision differences)
+2. Update timestamp assertion to compare at millisecond precision
+3. Verify tests pass locally
+4. Update logbook
+
+**Changes:**
+- **Modified** `TaskRepositoryTest.testUpdateTask` (line 270):
+  - Changed: `assertThat(updated.getCreatedAt()).isEqualTo(originalCreatedAt)`
+  - To: `assertThat(updated.getCreatedAt().toEpochMilli()).isEqualTo(originalCreatedAt.toEpochMilli())`
+  - Reason: Compare at millisecond precision to be database-agnostic (works with both H2 and PostgreSQL)
+
+**Result:**
+✅ All 63 tests pass locally after fix
+✅ Test now compatible with both H2 (dev) and PostgreSQL (CI/production)
+✅ Maintains test integrity while handling database precision differences
+
+**Root cause:** PostgreSQL `TIMESTAMP(6) WITH TIME ZONE` stores microsecond precision, truncating Java `Instant` nanoseconds. Comparing at millisecond level ensures cross-database compatibility.
+
+**Next steps:** Push fix and verify GitHub Actions pipeline passes.
+
+---
+
 ## 2025-10-18T16:00 – Restructure Documentation for Maintainability & Lowercase Naming
 
 **Request (paraphrased):** Reorganize documentation from monolithic README (422 lines) into focused, scannable guides following industry best practices. Later, remove deprecated docs and standardize all documentation filenames to lowercase.
