@@ -4,6 +4,35 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T16:30 – Fix File Logging in Containerized Environment
+
+**Request (paraphrased):** Application logs showing FileNotFoundException errors when trying to write to `/app/logs/taskmanager.log` on Render.
+
+**Context/goal:** In containerized environments (Docker on Render), applications should log to stdout/stderr, not to local files. Container platforms capture console output and provide centralized log aggregation. File logging causes permission issues and is incompatible with ephemeral container filesystems.
+
+**Plan:**
+1. Remove file logging configuration from application-prod.yml
+2. Keep only console logging (stdout/stderr)
+3. Let Render capture and aggregate console logs automatically
+
+**Changes:**
+- `backend/src/main/resources/application-prod.yml`:
+  - Removed `logging.file.name`, `logging.file.max-size`, `logging.file.max-history`
+  - Removed `logging.pattern.file`
+  - Kept only `logging.pattern.console` for stdout output
+
+**Result:**
+✅ Commit: `72ce7e7` - "fix(config): remove file logging for containerized deployment"
+✅ Pushed to GitHub - Render will auto-deploy with fix
+✅ Eliminates FileNotFoundException errors at startup
+✅ Logs now properly stream to Render's log viewer
+
+**Next steps:**
+- Monitor Render deployment logs to verify clean startup
+- Application should now start without logging errors
+
+---
+
 ## 2025-10-18T15:50 – Fix DATABASE_URL Format Using Standard PostgreSQL Env Vars
 
 **Request (paraphrased):** Application failing to start on Render with JDBC URL error. Initial hacky solution with bash script questioned - is there a proper way?
