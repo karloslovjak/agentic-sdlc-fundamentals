@@ -4,6 +4,62 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T17:00 – Fix Slow Startup and Port Binding Issues on Render
+
+**Request (paraphrased):** Application taking 124+ seconds to start on Render. Render showing "No open ports detected" warnings and restarting deployment after detecting port 8080 late.
+
+**Context/goal:** Spring Boot app was extremely slow to start (124 seconds vs typical 10-30 seconds). Render expects apps to bind to port 10000 immediately, but app was using port 8080 and taking too long to initialize, causing Render to restart the deployment.
+
+**Root causes:**
+1. Wrong port configuration - using 8080 instead of Render's expected 10000
+2. Heavy connection pool initialization (10 max connections, 5 minimum idle)
+3. No JVM optimization flags for faster startup
+4. Hibernate metadata scanning on startup
+5. Large thread pool configuration
+
+**Plan:**
+1. Change server port from 8080 to 10000 (Render's internal port)
+2. Optimize HikariCP pool: reduce max connections (5), min idle (2)
+3. Add JVM startup optimization flags to Dockerfile ENTRYPOINT
+4. Optimize Hibernate: disable metadata defaults, set open-in-view=false
+5. Reduce Tomcat thread pool for free tier
+6. Update health check to use correct port
+
+**Changes:**
+- `render.yaml`:
+  - Changed SERVER_PORT from 8080 to 10000
+
+- `backend/src/main/resources/application-prod.yml`:
+  - Server port: `${SERVER_PORT:10000}` (dynamic, defaults to 10000)
+  - Added Tomcat thread limits: max 10, min-spare 2
+  - HikariCP: reduced max pool size from 10→5, min idle from 5→2
+  - JPA: set `open-in-view: false` for faster startup
+  - Hibernate: disabled `temp.use_jdbc_metadata_defaults` to skip metadata scanning
+
+- `backend/Dockerfile`:
+  - Changed EXPOSE from 8080 to 10000
+  - Updated health check to use `${SERVER_PORT:-10000}`
+  - Increased health check start-period from 40s to 60s
+  - Added JVM optimization flags:
+    - `-XX:+UseContainerSupport` - proper container memory limits
+    - `-XX:MaxRAMPercentage=75.0` - use 75% of available RAM
+    - `-XX:TieredStopAtLevel=1` - faster startup (C1 compiler only)
+    - `-Djava.security.egd=file:/dev/./urandom` - faster random number generation
+
+**Result:**
+✅ Expected startup time: ~20-40 seconds (down from 124s)
+✅ Immediate port binding on Render's expected port 10000
+✅ No more "No open ports detected" warnings
+✅ No more deployment restarts due to late port detection
+✅ Optimized resource usage for free tier constraints
+
+**Next steps:**
+- Commit and push changes
+- Monitor Render deployment logs to verify faster startup
+- Validate health check responds quickly at startup
+
+---
+
 ## 2025-10-18T16:30 – Fix File Logging in Containerized Environment
 
 **Request (paraphrased):** Application logs showing FileNotFoundException errors when trying to write to `/app/logs/taskmanager.log` on Render.

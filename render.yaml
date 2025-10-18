@@ -34,7 +34,7 @@ services:
           name: taskmanager-postgres
           property: password
       - key: SERVER_PORT
-        value: 8080
+        value: 10000
     healthCheckPath: /actuator/health
     autoDeploy: true  # Auto-deploy on push to main branch
 

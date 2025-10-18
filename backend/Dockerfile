@@ -30,15 +30,21 @@ COPY --from=build /app/target/*.jar app.jar
 # Switch to non-root user
 USER spring:spring
 
-# Expose port 8080
-EXPOSE 8080
+# Expose port (Render uses 10000 internally)
+EXPOSE 10000
 
 # Set active profile to prod (uses PostgreSQL)
 ENV SPRING_PROFILES_ACTIVE=prod
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+# Health check - use dynamic port from env
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${SERVER_PORT:-10000}/actuator/health || exit 1
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application with JVM optimizations for faster startup
+ENTRYPOINT ["java", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-XX:+TieredCompilation", \
+    "-XX:TieredStopAtLevel=1", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-jar", "app.jar"]

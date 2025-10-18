@@ -6,12 +6,19 @@
 # Server Configuration
 # ========================================
 server:
-  port: 8080
+  # Render uses port 10000 internally
+  port: ${SERVER_PORT:10000}
   error:
     # Don't expose sensitive error details in production
     include-message: never
     include-binding-errors: never
     include-stacktrace: never
+  # Reduce shutdown grace period for faster restarts
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 10
+      min-spare: 2
 
 # ========================================
 # Database Configuration - PostgreSQL
@@ -28,13 +35,14 @@ spring:
     password: ${PGPASSWORD:taskpass}
     driver-class-name: org.postgresql.Driver
 
-    # Connection pool settings for production
+    # Connection pool settings for production (optimized for free tier)
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: 5  # Reduced for free tier
+      minimum-idle: 2  # Start with fewer connections for faster startup
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
+      initialization-fail-timeout: 30000
 
   # ========================================
   # Flyway Configuration - ENABLED
@@ -64,9 +72,13 @@ spring:
     # Don't show SQL in production logs
     show-sql: false
 
+    # Faster startup by deferring datasource initialization
+    defer-datasource-initialization: false
+    open-in-view: false
+
     properties:
       hibernate:
-        # PostgreSQL dialect
+        # PostgreSQL dialect - auto-detected, but explicit for clarity
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
         # Performance optimizations
@@ -77,6 +89,10 @@ spring:
 
         # Format SQL in logs (if enabled for debugging)
         format_sql: false
+
+        # Disable metadata scanning for faster startup
+        temp:
+          use_jdbc_metadata_defaults: false
 
   # ========================================
   # Jackson JSON Configuration
