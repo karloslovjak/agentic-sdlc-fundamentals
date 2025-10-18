@@ -113,6 +113,9 @@ logging:
     com.accenture.taskmanager: INFO
     org.springframework.web: WARN
     org.hibernate: WARN
+    # Suppress harmless 404 errors for missing static resources (favicon, root path)
+    org.springframework.web.servlet.resource.ResourceHttpRequestHandler: ERROR
+    org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: ERROR
     # Set to DEBUG to see Flyway migration details
     org.flywaydb: INFO
 
