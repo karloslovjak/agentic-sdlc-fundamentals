@@ -1,0 +1,116 @@
+# Production Profile Configuration
+# Use with: java -jar app.jar --spring.profiles.active=prod
+# Or: SPRING_PROFILES_ACTIVE=prod java -jar app.jar
+
+# ========================================
+# Server Configuration
+# ========================================
+server:
+  port: 8080
+  error:
+    # Don't expose sensitive error details in production
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+
+# ========================================
+# Database Configuration - PostgreSQL
+# ========================================
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskmanager
+    username: ${DB_USERNAME:taskmanager_user}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+
+    # Connection pool settings for production
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ========================================
+  # Flyway Configuration - ENABLED
+  # ========================================
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    baseline-description: Initial baseline
+    # Validate migrations on startup
+    validate-on-migrate: true
+    # Create schema if it doesn't exist
+    create-schemas: true
+    # Default schema
+    default-schema: public
+
+  # ========================================
+  # JPA / Hibernate Configuration
+  # ========================================
+  jpa:
+    # IMPORTANT: Use 'validate' in production with Flyway
+    # Hibernate will only validate schema, not modify it
+    hibernate:
+      ddl-auto: validate
+
+    # Don't show SQL in production logs
+    show-sql: false
+
+    properties:
+      hibernate:
+        # PostgreSQL dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+        # Performance optimizations
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+        # Format SQL in logs (if enabled for debugging)
+        format_sql: false
+
+  # ========================================
+  # Jackson JSON Configuration
+  # ========================================
+  jackson:
+    serialization:
+      # No pretty print in production (saves bandwidth)
+      indent-output: false
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# ========================================
+# Logging Configuration
+# ========================================
+logging:
+  level:
+    root: INFO
+    com.accenture.taskmanager: INFO
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    # Set to DEBUG to see Flyway migration details
+    org.flywaydb: INFO
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+  # Log to file in production
+  file:
+    name: logs/taskmanager.log
+    max-size: 10MB
+    max-history: 30
+
+# ========================================
+# SpringDoc / OpenAPI Configuration
+# ========================================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true

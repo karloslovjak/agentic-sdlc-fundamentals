@@ -18,6 +18,13 @@ spring:
       enabled: false
 
   # ========================================
+  # Flyway Configuration for Tests
+  # ========================================
+  flyway:
+    # Disabled for tests - use Hibernate DDL auto instead
+    enabled: false
+
+  # ========================================
   # JPA / Hibernate Configuration for Tests
   # ========================================
   jpa:

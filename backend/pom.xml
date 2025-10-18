@@ -31,6 +31,9 @@
 
         <!-- JaCoCo for code coverage analysis with 100% target -->
         <jacoco.version>0.8.11</jacoco.version>
+
+        <!-- MapStruct for object mapping between layers -->
+        <mapstruct.version>1.6.3</mapstruct.version>
     </properties>
 
     <dependencies>
@@ -72,6 +75,24 @@
         </dependency>
 
         <!--
+            Flyway Core: Database migration tool
+            Manages versioned SQL scripts for schema evolution
+        -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <!--
+            Flyway PostgreSQL: PostgreSQL-specific dialect support
+            Required for Flyway to work with PostgreSQL features
+        -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!--
             H2 Database: In-memory database for development and testing
             Faster tests, no external dependencies
         -->
@@ -89,6 +110,17 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!--
+            MapStruct: Type-safe object mapping between layers
+            Generates mapper implementations at compile time
+            Used for API models ↔ Entity ↔ DTO conversions
+        -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
         </dependency>
 
         <!--
@@ -271,6 +303,7 @@
             <!--
                 Maven Compiler Plugin: Explicit Java 21 configuration
                 Ensures consistent compilation across environments
+                Includes MapStruct and Lombok annotation processors
             -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -281,6 +314,26 @@
                     <compilerArgs>
                         <arg>-parameters</arg>
                     </compilerArgs>
+                    <annotationProcessorPaths>
+                        <!-- MapStruct annotation processor -->
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                        <!-- Lombok annotation processor -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <!-- Lombok-MapStruct binding for compatibility -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 

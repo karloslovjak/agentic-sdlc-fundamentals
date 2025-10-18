@@ -36,11 +36,24 @@ spring:
       path: /h2-console
 
   # ========================================
+  # Flyway Configuration
+  # ========================================
+  flyway:
+    # Disabled for H2 development (using Hibernate DDL auto)
+    # Enabled in production profile for PostgreSQL
+    enabled: false
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    # Automatically create flyway_schema_history table
+    baseline-description: Initial baseline
+
+  # ========================================
   # JPA / Hibernate Configuration
   # ========================================
   jpa:
     # DDL auto mode: create-drop recreates schema on each startup (dev only)
-    # Use 'validate' in production, 'update' for careful schema evolution
+    # Use 'validate' in production with Flyway
     hibernate:
       ddl-auto: create-drop
 
