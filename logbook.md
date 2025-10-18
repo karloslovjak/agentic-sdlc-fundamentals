@@ -54,13 +54,65 @@ Coverage evolution:
 
 **Next steps:**
 - ✅ Commit all changes and push to trigger GitHub Actions pipeline validation
-- ⏭️ Set up Render deployment (render.yaml updated, ready for deployment)
+- 🚀 Configure Render Blueprint deployment
 
 ---
 
-## 2025-10-18T15:09 – Fix CI JaCoCo Coverage Check Configuration
+## 2025-10-18T15:30 – Configure Render Deployment with Blueprint
 
-**Request (paraphrased):** GitHub Actions pipeline failing at "Verify test coverage" step with error "The parameters 'rules' for goal org.jacoco:jacoco-maven-plugin:0.8.11:check are missing or invalid".
+**Request (paraphrased):** Set up Render deployment using Blueprint with render.yaml configuration.
+
+**Context/goal:** Configure automated deployment to Render.com using Infrastructure as Code (render.yaml Blueprint). Use existing Dockerfile for containerized deployment with PostgreSQL database.
+
+**Plan:**
+1. Update render.yaml to use Docker-based deployment (Render Blueprints don't support `runtime: java`)
+2. Verify Dockerfile exists and is properly configured
+3. Add deploy job to CI workflow with Render webhook
+4. Update logbook
+
+**Changes:**
+- **Modified** `render.yaml`:
+  - Changed from `runtime: java` to `env: docker` (Blueprint requirement)
+  - Set `dockerfilePath: ./backend/Dockerfile` and `dockerContext: ./backend`
+  - Configured service name: `task-manager-api` (kebab-case naming convention)
+  - Environment variables linked to PostgreSQL database
+  - Auto-deploy enabled on push to main branch
+
+- **Modified** `.github/workflows/ci.yml`:
+  - Added deploy job that triggers after successful tests
+  - Uses Render Deploy Hook URL (stored in GitHub secrets)
+  - Only runs on push to main branch
+
+- **Verified** `backend/Dockerfile`:
+  - Multi-stage build (Maven build → JRE runtime)
+  - Non-root user for security
+  - Health check configured
+  - Already exists and properly configured
+
+**Configuration:**
+```yaml
+Service: task-manager-api (web service, Docker)
+Database: taskmanager-postgres (PostgreSQL, free tier)
+Region: Frankfurt (configurable)
+Auto-deploy: Enabled on main branch
+Health check: /actuator/health
+```
+
+**Blueprint Naming Convention:**
+- Service names: kebab-case (e.g., `task-manager-api`, not `taskManagerAPI`)
+- Database names: kebab-case with descriptive suffix (e.g., `taskmanager-postgres`)
+- Blueprint name: Can be custom, typically project name
+
+**Next steps:**
+1. Commit render.yaml and CI workflow changes
+2. Push to GitHub
+3. In Render Dashboard: New → Blueprint → Select repo → Apply
+4. Get Deploy Hook URL from Render → Add to GitHub Secrets as `RENDER_DEPLOY_HOOK_URL`
+5. Monitor first deployment
+
+---
+
+## 2025-10-18T15:20 – Achieve 100% Test Coverage with Proper Exclusions**Request (paraphrased):** GitHub Actions pipeline failing at "Verify test coverage" step with error "The parameters 'rules' for goal org.jacoco:jacoco-maven-plugin:0.8.11:check are missing or invalid".
 
 **Context/goal:** The JaCoCo `check` execution was commented out in `pom.xml`, but CI workflow was trying to run `mvn jacoco:check` as a standalone goal. When run from command line, it doesn't inherit the `<execution>` configuration with `<rules>`, causing the error. Additionally, coverage was only 63% line / 22% branch because generated OpenAPI code wasn't excluded from coverage checks.
 
