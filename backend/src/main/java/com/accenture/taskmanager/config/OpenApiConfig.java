@@ -48,7 +48,7 @@ public class OpenApiConfig {
                                 .name("Task Manager Team")))
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:8080/api")
+                                .url("http://localhost:8080/")
                                 .description("Local development server")));
     }
 

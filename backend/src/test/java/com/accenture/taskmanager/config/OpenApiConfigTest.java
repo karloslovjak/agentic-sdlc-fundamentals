@@ -75,7 +75,11 @@ class OpenApiConfigTest {
      *
      * Verifies:
      * - At least one server is configured
-     * - Server URL points to local development
+     * - Server URL points to localhost (base URL only, no /api path)
+     * - Controller @RequestMapping defines the /api prefix
+     *
+     * Note: Server URL should be base URL only. The /api prefix is defined
+     * in TaskController's @RequestMapping("/api") annotation.
      */
     @Test
     void openAPIShouldContainServerConfiguration() {
@@ -83,10 +87,15 @@ class OpenApiConfigTest {
                 .as("OpenAPI should have at least one server configured")
                 .isNotEmpty();
 
-        assertThat(openAPI.getServers().get(0).getUrl())
-                .as("Server URL should point to local API endpoint")
+        String serverUrl = openAPI.getServers().get(0).getUrl();
+        assertThat(serverUrl)
+                .as("Server URL should point to localhost base URL")
                 .contains("localhost")
-                .contains("/api");
+                .contains("8080");
+
+        assertThat(serverUrl)
+                .as("Server URL should NOT include /api (that's defined in controller @RequestMapping)")
+                .doesNotContain("/api");
     }
 
 }

@@ -19,8 +19,8 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/taskmanager
-    username: ${DB_USERNAME:taskmanager_user}
-    password: ${DB_PASSWORD:changeme}
+    username: ${DB_USERNAME:taskuser}
+    password: ${DB_PASSWORD:taskpass}
     driver-class-name: org.postgresql.Driver
 
     # Connection pool settings for production
