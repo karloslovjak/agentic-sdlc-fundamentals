@@ -4,6 +4,102 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T15:30 – Setup CI/CD Pipeline with GitHub Actions + Render.com
+
+**Request (paraphrased):** Setup continuous integration and deployment using GitHub Actions for build/test and Render.com for automatic deployment to production on every push.
+
+**Context/goal:** Enable automated deployment pipeline so that every push to main branch triggers build, test, Docker image creation, and deployment to a publicly accessible URL. Requirements: build code, package in Docker with PostgreSQL (prod profile), run tests, deploy to accessible environment.
+
+**Plan:**
+1. Create GitHub Actions CI workflow for build and test
+2. Create production-ready multi-stage Dockerfile
+3. Add Spring Boot Actuator for health checks
+4. Create Render.yaml Infrastructure as Code
+5. Configure environment variables for Render deployment
+6. Document complete CI/CD setup in README
+
+**Changes:**
+- **Created** `.github/workflows/ci.yml`:
+  - Triggers on push to main/develop and PRs to main
+  - Java 21 with Maven caching
+  - Build, test, coverage verification (100% threshold)
+  - Package JAR
+  - Upload test results and coverage reports as artifacts
+
+- **Created** `backend/Dockerfile` (multi-stage build):
+  - Stage 1: Maven build from source
+  - Stage 2: Eclipse Temurin JRE 21 Alpine (minimal runtime)
+  - Non-root user for security
+  - SPRING_PROFILES_ACTIVE=prod
+  - Health check using actuator endpoint
+  - Optimized layer caching
+
+- **Created** `backend/.dockerignore`:
+  - Exclude unnecessary files from Docker context
+  - Faster builds, smaller context
+
+- **Created** `render.yaml` (Infrastructure as Code):
+  - Web service: Docker-based deployment
+  - PostgreSQL database: Free tier, Frankfurt region
+  - Auto-deploy on push to main
+  - Environment variables auto-configured from database
+  - Health check path: /actuator/health
+
+- **Updated** `backend/pom.xml`:
+  - Added spring-boot-starter-actuator dependency
+  - Enables /actuator/health endpoint for Render health checks
+
+- **Updated** `backend/src/main/resources/application.yml`:
+  - Added actuator configuration
+  - Expose health endpoint
+  - show-details: always (for development)
+
+- **Updated** `backend/src/main/resources/application-prod.yml`:
+  - Changed datasource URL/username/password to use environment variables
+  - `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
+  - Added actuator production config
+  - Health details: when-authorized
+  - Enabled liveness/readiness probes
+
+- **Updated** `README.md`:
+  - Added comprehensive "CI/CD Pipeline" section
+  - GitHub Actions workflow documentation
+  - Render.com setup instructions (step-by-step)
+  - Automatic deployment flow explanation
+  - Environment variables reference
+  - Monitoring and health check examples
+  - Local Docker testing guide
+  - Cost breakdown (100% free tier)
+
+**Result:**
+✅ Complete CI/CD pipeline configured:
+- **GitHub Actions**: Builds, tests (63 tests), verifies coverage (100%), packages JAR
+- **Docker**: Multi-stage build, optimized for production, security hardened
+- **Render.com**: Auto-deploy on push, PostgreSQL database, health checks
+- **Monitoring**: Actuator health endpoint, structured logging, real-time logs
+
+**Deployment Flow:**
+```
+Push to GitHub → GitHub Actions (build/test) → Render detects push →
+Build Docker image → Run Flyway migrations → Deploy with zero-downtime →
+Health check → Live at https://*.onrender.com
+```
+
+**Testing:**
+Once pushed to GitHub:
+1. Check GitHub Actions tab for CI run status
+2. If successful, Render auto-deploys
+3. Access app at Render-provided URL
+4. Test endpoints:
+   - `GET /actuator/health` - Health check
+   - `GET /api/tasks` - Task list
+   - `GET /swagger-ui.html` - API documentation
+
+**Next steps:**
+Push to GitHub to trigger first deployment. Render will provision PostgreSQL database and deploy the application automatically.
+
+---
+
 ## 2025-10-18T14:29 – Create Comprehensive Service Layer Tests with Unhappy Paths
 
 **Request (paraphrased):** After explaining CORS mechanism, analyze test coverage for unhappy paths. Found service layer had zero tests, so create comprehensive TaskServiceTest.

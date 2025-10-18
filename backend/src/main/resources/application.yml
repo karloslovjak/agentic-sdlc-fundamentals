@@ -127,3 +127,17 @@ springdoc:
 
   # Show Spring Boot actuator endpoints (if added later)
   show-actuator: false
+
+# ========================================
+# Actuator Configuration
+# ========================================
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose health endpoint for local development
+        include: health
+  endpoint:
+    health:
+      show-details: always  # Show detailed health info in development
+

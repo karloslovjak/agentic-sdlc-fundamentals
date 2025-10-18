@@ -1,0 +1,35 @@
+# Maven build output
+target/
+!target/*.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.settings/
+.classpath
+.project
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Test files (already in JAR)
+src/test/
+
+# Maven wrapper (not needed in Docker)
+.mvn/wrapper/maven-wrapper.jar

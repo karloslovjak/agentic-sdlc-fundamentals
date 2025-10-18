@@ -267,6 +267,152 @@ All significant development work is tracked in `/logbook.md` with:
 - Test results and coverage
 - Lessons learned
 
+## CI/CD Pipeline
+
+### Overview
+
+This project uses **GitHub Actions** for continuous integration and **Render.com** for automatic deployment.
+
+**On every push to `main`:**
+1. 🔨 Code is built with Maven
+2. 🧪 All tests run
+3. 📦 Docker image is built
+4. 🚀 Automatically deployed to Render.com
+5. ✅ Health checks verify deployment
+
+### GitHub Actions Workflows
+
+#### CI Workflow (`.github/workflows/ci.yml`)
+- Triggers on push to `main` and `develop` branches
+- Triggers on pull requests to `main`
+- Runs on Ubuntu latest with Java 21
+- Steps:
+  - Checkout code
+  - Set up JDK 21 (Temurin distribution)
+  - Build with Maven
+  - Run tests with coverage
+  - Verify 100% coverage threshold
+  - Package application (JAR)
+  - Upload test results and coverage reports as artifacts
+
+### Deployment to Render.com
+
+#### Setup Instructions
+
+1. **Fork/Clone this repository** to your GitHub account
+
+2. **Create a Render.com account** (free tier):
+   - Go to https://render.com
+   - Sign up with GitHub
+
+3. **Create a new Blueprint** from `render.yaml`:
+   - In Render dashboard, click "New +" → "Blueprint"
+   - Connect your GitHub repository
+   - Render will automatically detect `render.yaml`
+   - Click "Apply" to provision resources
+
+4. **Resources created**:
+   - **PostgreSQL database** (taskmanager-postgres)
+     - Free tier (90 days, then requires re-creation)
+     - Region: Frankfurt (configurable)
+   - **Web Service** (taskmanager-db)
+     - Deployed from Docker
+     - Auto-deploy on push to `main`
+     - Environment variables auto-configured from database
+
+5. **Access your deployed app**:
+   - Render provides a URL like: `https://taskmanager-db.onrender.com`
+   - API: `https://taskmanager-db.onrender.com/api/tasks`
+   - Swagger UI: `https://taskmanager-db.onrender.com/swagger-ui.html`
+   - Health check: `https://taskmanager-db.onrender.com/actuator/health`
+
+#### Automatic Deployment
+
+Once set up, Render automatically:
+- Detects pushes to `main` branch
+- Builds Docker image from `backend/Dockerfile`
+- Runs database migrations (Flyway)
+- Deploys new version with zero-downtime
+- Performs health checks before routing traffic
+
+#### Environment Variables
+
+Render automatically configures:
+- `SPRING_PROFILES_ACTIVE=prod`
+- `SPRING_DATASOURCE_URL` (from PostgreSQL database)
+- `SPRING_DATASOURCE_USERNAME` (from PostgreSQL database)
+- `SPRING_DATASOURCE_PASSWORD` (from PostgreSQL database)
+- `SERVER_PORT=8080`
+
+No manual configuration needed!
+
+#### Monitoring
+
+**Health Check:**
+```bash
+curl https://your-app.onrender.com/actuator/health
+```
+
+**Response:**
+```json
+{
+  "status": "UP",
+  "components": {
+    "db": { "status": "UP" },
+    "diskSpace": { "status": "UP" },
+    "ping": { "status": "UP" }
+  }
+}
+```
+
+**View Logs:**
+- Render Dashboard → Your Service → "Logs" tab
+- Real-time streaming logs
+- Filter by severity (INFO, WARN, ERROR)
+
+#### Cost
+
+**100% Free Tier:**
+- GitHub Actions: 2,000 minutes/month (unlimited for public repos)
+- Render.com: Free tier includes
+  - 750 hours/month web service
+  - PostgreSQL database (90 days)
+- **Total cost: $0/month** 🎉
+
+**Note:** Render free tier databases expire after 90 days but can be recreated. All data migrations are versioned with Flyway.
+
+### Local Docker Testing
+
+Test the production Docker image locally before deploying:
+
+```bash
+# Build the Docker image
+cd backend
+docker build -t taskmanager:latest .
+
+# Run with PostgreSQL
+docker run --name taskmanager-postgres \
+  -e POSTGRES_DB=taskmanager \
+  -e POSTGRES_USER=taskuser \
+  -e POSTGRES_PASSWORD=taskpass \
+  -p 5432:5432 \
+  -d postgres:16
+
+# Run the application
+docker run --name taskmanager-app \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/taskmanager \
+  -e SPRING_DATASOURCE_USERNAME=taskuser \
+  -e SPRING_DATASOURCE_PASSWORD=taskpass \
+  -p 8080:8080 \
+  taskmanager:latest
+
+# Test health check
+curl http://localhost:8080/actuator/health
+
+# Test API
+curl http://localhost:8080/api/tasks
+```
+
 ## License
 
 *(To be determined)*

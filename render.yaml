@@ -1,0 +1,38 @@
+# Render.com Infrastructure as Code
+# This file defines all services needed for the Task Manager application
+
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: taskmanager-db
+    env: docker
+    plan: free
+    region: frankfurt  # Change to your preferred region: oregon, frankfurt, singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: taskmanager-postgres
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: taskmanager-postgres
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: taskmanager-postgres
+          property: password
+      - key: SERVER_PORT
+        value: 8080
+    healthCheckPath: /actuator/health
+    autoDeploy: true  # Auto-deploy on push to main branch
+
+databases:
+  - name: taskmanager-postgres
+    databaseName: taskmanager
+    plan: free
+    region: frankfurt  # Must match service region
+    ipAllowList: []  # Empty = allow all (required for free tier)

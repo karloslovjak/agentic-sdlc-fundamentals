@@ -16,11 +16,16 @@ server:
 # ========================================
 # Database Configuration - PostgreSQL
 # ========================================
+# Environment variables override defaults:
+# - SPRING_DATASOURCE_URL (from Render's DATABASE_URL)
+# - SPRING_DATASOURCE_USERNAME (from Render)
+# - SPRING_DATASOURCE_PASSWORD (from Render)
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/taskmanager
-    username: ${DB_USERNAME:taskuser}
-    password: ${DB_PASSWORD:taskpass}
+    # Render.com provides these via environment variables
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/taskmanager}
+    username: ${SPRING_DATASOURCE_USERNAME:taskuser}
+    password: ${SPRING_DATASOURCE_PASSWORD:taskpass}
     driver-class-name: org.postgresql.Driver
 
     # Connection pool settings for production
@@ -104,6 +109,22 @@ logging:
     name: logs/taskmanager.log
     max-size: 10MB
     max-history: 30
+
+# ========================================
+# Actuator Configuration (Production)
+# ========================================
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only expose health endpoint in production
+        include: health
+  endpoint:
+    health:
+      # Don't show detailed health info in production (security)
+      show-details: when-authorized
+      probes:
+        enabled: true  # Enable liveness/readiness probes for Kubernetes/Render
 
 # ========================================
 # SpringDoc / OpenAPI Configuration

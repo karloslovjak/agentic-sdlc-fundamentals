@@ -65,6 +65,16 @@
         </dependency>
 
         <!--
+            Spring Boot Actuator: Production-ready features
+            Health checks, metrics, application info endpoints
+            Required for Render.com health checks
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!--
             PostgreSQL Driver: Production database
             Will be configured in application.properties
         -->
