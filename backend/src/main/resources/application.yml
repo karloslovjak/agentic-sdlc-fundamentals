@@ -90,3 +90,27 @@ logging:
   # Logging pattern with structured format
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# ========================================
+# SpringDoc OpenAPI Configuration
+# ========================================
+springdoc:
+  # Swagger UI configuration
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    # Try it out enabled by default
+    try-it-out-enabled: true
+    # Display request duration
+    display-request-duration: true
+    # Group operations by tags
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+  # API docs configuration
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+
+  # Show Spring Boot actuator endpoints (if added later)
+  show-actuator: false

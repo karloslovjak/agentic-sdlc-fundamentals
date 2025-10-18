@@ -111,10 +111,121 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+
+        <!--
+            SpringDoc OpenAPI: Swagger UI and OpenAPI 3 support
+            Provides automatic API documentation and interactive UI at /swagger-ui.html
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
+        <!--
+            Jackson Databind Nullable: Support for nullable fields in generated models
+            Required by OpenAPI Generator for proper null handling
+        -->
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>0.2.6</version>
+        </dependency>
+
+        <!--
+            Jakarta Validation API: Bean validation annotations
+            Used by generated models for validation (@NotNull, @Size, etc.)
+        -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
+        <!--
+            Swagger Annotations: OpenAPI/Swagger annotations
+            Used by generated code for API documentation
+        -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>2.2.27</version>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!--
+                OpenAPI Generator Maven Plugin: Generate models and API interfaces from OpenAPI spec
+                Generates DTOs (models) and API interfaces into target/generated-sources
+                Run with: mvn generate-sources
+            -->
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.10.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <!-- OpenAPI specification file location -->
+                            <inputSpec>${project.basedir}/src/main/resources/openapi/task-manager-api.yml</inputSpec>
+
+                            <!-- Generator: spring for Spring Boot REST controllers -->
+                            <generatorName>spring</generatorName>
+
+                            <!-- Output directory for generated code -->
+                            <output>${project.build.directory}/generated-sources/openapi</output>
+
+                            <!-- Base package for generated code -->
+                            <apiPackage>com.accenture.taskmanager.api</apiPackage>
+                            <modelPackage>com.accenture.taskmanager.api.model</modelPackage>
+
+                            <!-- Generate only models and API interfaces, not implementation -->
+                            <generateApis>true</generateApis>
+                            <generateApiTests>false</generateApiTests>
+                            <generateApiDocumentation>false</generateApiDocumentation>
+                            <generateModels>true</generateModels>
+                            <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <generateSupportingFiles>false</generateSupportingFiles>
+
+                            <!-- Configuration options for generated code -->
+                            <configOptions>
+                                <!-- Generate API interfaces only, controllers will implement them -->
+                                <interfaceOnly>true</interfaceOnly>
+
+                                <!-- Use Spring Boot 3.x annotations -->
+                                <useSpringBoot3>true</useSpringBoot3>
+
+                                <!-- Use Jakarta (not Javax) for validation -->
+                                <useJakartaEe>true</useJakartaEe>
+
+                                <!-- Use Java 8 date/time API (LocalDate, LocalDateTime) -->
+                                <dateLibrary>java8</dateLibrary>
+
+                                <!-- Generate builder pattern for models with Lombok -->
+                                <additionalModelTypeAnnotations>@lombok.Builder @lombok.AllArgsConstructor</additionalModelTypeAnnotations>
+
+                                <!-- Skip default interface implementation -->
+                                <skipDefaultInterface>true</skipDefaultInterface>
+
+                                <!-- Use ResponseEntity for API responses -->
+                                <useResponseEntity>true</useResponseEntity>
+
+                                <!-- Generate validation annotations -->
+                                <useBeanValidation>true</useBeanValidation>
+                                <performBeanValidation>true</performBeanValidation>
+
+                                <!-- Use Optional for non-required fields -->
+                                <useOptional>false</useOptional>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!--
                 Spring Boot Maven Plugin: Package executable JAR
                 Enables `mvn spring-boot:run` command
@@ -131,6 +242,30 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <!--
+                Build Helper Maven Plugin: Add generated sources to compilation
+                Ensures generated OpenAPI code is compiled and available
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-generated-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/openapi/src/main/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <!--

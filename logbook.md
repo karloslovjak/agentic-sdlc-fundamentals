@@ -4,6 +4,91 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T12:04 – Setup OpenAPI/Swagger Code Generation
+
+**Request (paraphrased):** Set up OpenAPI/Swagger with YAML specification, configure code generation for models and API interfaces, and enable Swagger UI for API documentation and testing.
+
+**Context/goal:** Implement API-first design with OpenAPI specification defining all REST endpoints and models. Generate type-safe Java models and API interfaces from the spec, ensuring consistency between documentation and implementation. Enable Swagger UI for interactive API testing.
+
+**Plan:**
+1. Create OpenAPI 3.0 specification YAML with Task API endpoints and models
+2. Add SpringDoc OpenAPI dependency for Swagger UI
+3. Add OpenAPI Generator Maven plugin to generate code at build time
+4. Configure plugin to generate models and API interfaces (not controllers)
+5. Add build-helper plugin to include generated sources in compilation
+6. Create OpenAPI configuration class
+7. Update application.yml with SpringDoc configuration
+8. Create tests for OpenAPI configuration
+9. Verify build generates code successfully
+
+**Changes:**
+- Created `backend/src/main/resources/openapi/task-manager-api.yml`:
+  - OpenAPI 3.0.3 specification with complete Task Manager API
+  - 5 endpoints: GET /tasks, POST /tasks, GET /tasks/{id}, PUT /tasks/{id}, DELETE /tasks/{id}
+  - 4 schemas: TaskRequest, TaskResponse, TaskStatus (enum), ErrorResponse
+  - Full validation rules, descriptions, and examples
+
+- Updated `backend/pom.xml`:
+  - Added `springdoc-openapi-starter-webmvc-ui` 2.7.0 for Swagger UI
+  - Added `jackson-databind-nullable` 0.2.6 for nullable field support
+  - Added `swagger-annotations` 2.2.27 for API documentation
+  - Added OpenAPI Generator Maven Plugin 7.10.0:
+    - Generates into `target/generated-sources/openapi`
+    - Package: `com.accenture.taskmanager.api.model` (models), `com.accenture.taskmanager.api` (API interfaces)
+    - Interface-only generation (controllers will implement)
+    - Spring Boot 3, Jakarta EE, Java 8 date/time, Lombok builder pattern
+  - Added Build Helper Maven Plugin 3.6.0 to add generated sources to compilation
+
+- Created `backend/src/main/java/com/accenture/taskmanager/config/OpenApiConfig.java`:
+  - Configures OpenAPI documentation metadata
+  - Sets up server information for Swagger UI
+  - Bean for customizing API documentation
+
+- Updated `backend/src/main/resources/application.yml`:
+  - SpringDoc configuration: Swagger UI path, API docs path
+  - Enabled "Try it out" in Swagger UI
+  - Sorted operations and tags alphabetically
+
+- Created `backend/src/test/java/com/accenture/taskmanager/config/OpenApiConfigTest.java`:
+  - Tests OpenAPI bean creation and availability
+  - Verifies API metadata (title, version, description)
+  - Validates server configuration
+  - 3 tests, 100% coverage
+
+**Result:**
+- Build successful with code generation
+- All 6 tests passing (3 OpenApiConfig + 2 CorsConfig + 1 application context)
+- Generated files in `target/generated-sources/openapi/`:
+  - **API Interface**: `TasksApi.java` - REST controller interface with all 5 endpoints
+  - **Models**:
+    - `TaskRequest.java` - Request DTO with validation
+    - `TaskResponse.java` - Response DTO with all fields
+    - `TaskStatus.java` - Enum (TODO, IN_PROGRESS, DONE)
+    - `ErrorResponse.java` - Standard error response
+  - All models have Lombok @Builder and @AllArgsConstructor
+  - Full Jakarta validation annotations
+  - Swagger annotations for documentation
+- 100% test coverage maintained (7 classes analyzed)
+- Swagger UI will be available at `http://localhost:8080/swagger-ui.html` (when app runs)
+- OpenAPI JSON at `http://localhost:8080/v3/api-docs`
+
+```
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+Generated files:
+- TasksApi.java (API interface)
+- TaskRequest.java, TaskResponse.java, TaskStatus.java, ErrorResponse.java (models)
+```
+
+**Next steps:**
+- Implement Task entity (JPA)
+- Create TaskRepository
+- Create TaskService with business logic
+- Create TaskController implementing TasksApi interface
+- Map between TaskRequest/Response (API models) and internal DTOs/entities
+
+---
+
 ## 2025-10-18T11:49 – Update Spring Boot Version and Convert to YAML
 
 **Request (paraphrased):** Upgrade Spring Boot from 3.3.4 to 3.5.6 and convert application configuration from .properties to YAML format.
