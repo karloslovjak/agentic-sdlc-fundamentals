@@ -37,9 +37,9 @@ services:
         value: 10000
       - key: CORS_ALLOWED_ORIGINS
         # Configurable CORS origins for different environments
-        # Pattern supports wildcards for dynamic Render URLs
+        # Use ** for multi-level wildcard or specific subdomain patterns
         # Override this in Render Dashboard for UAT/prod specific domains
-        value: https://*.onrender.com
+        value: https://**onrender.com
     healthCheckPath: /actuator/health
     autoDeploy: true  # Auto-deploy on push to main branch
 

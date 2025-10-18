@@ -109,9 +109,10 @@ logging:
 # ========================================
 cors:
   # Comma-separated list of allowed origins
-  # Supports wildcards: http://localhost:*, https://*.onrender.com
+  # Supports wildcards: http://localhost:*, https://**onrender.com
+  # Use ** for multi-level wildcard matching (e.g., task-manager-api-802l.onrender.com)
   # Override via environment variable: CORS_ALLOWED_ORIGINS
-  allowed-origins: http://localhost:*,https://*.onrender.com
+  allowed-origins: http://localhost:*,https://**onrender.com
 
 # ========================================
 # SpringDoc OpenAPI Configuration
