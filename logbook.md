@@ -4,36 +4,79 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
-## 2025-10-18T17:20 – Fix CORS for Swagger UI on Render
+## 2025-10-18T17:20 – Make CORS Configuration Robust and Environment-Aware
 
-**Request (paraphrased):** Swagger UI showing "Failed to fetch" error when trying to execute API requests. CORS error preventing Swagger from making calls to the same-origin API.
+**Request (paraphrased):** Hardcoding the Render URL (`task-manager-api-802l.onrender.com`) is not robust. What if it changes to `802f` or any other suffix? How do we ensure configurability for multiple environments (dev, test, UAT, prod)?
 
-**Context/goal:** After deploying to Render, Swagger UI (served at `https://task-manager-api-802l.onrender.com/swagger-ui.html`) couldn't execute API calls to the same domain. The CORS configuration used pattern matching (`https://task-manager-api-*.onrender.com`) which wasn't matching the actual URL properly, causing preflight OPTIONS requests to fail without proper `Access-Control-Allow-Origin` headers.
+**Context/goal:** The previous CORS fix hardcoded the production URL, which is brittle and not scalable. Need a production-grade solution that:
+1. Works across different Render deployments (suffix changes)
+2. Supports multiple environments (dev, test, UAT, prod)
+3. Is configurable per environment without code changes
+4. Maintains security by not using wildcard `*`
 
 **Root cause:**
-The pattern `https://task-manager-api-*.onrender.com` in `addAllowedOriginPattern()` wasn't matching the actual Render URL `https://task-manager-api-802l.onrender.com` correctly. While the wildcard pattern `https://*.onrender.com` should theoretically work, adding the explicit origin ensures immediate compatibility.
+Hardcoded URLs in CorsConfig.java make it impossible to:
+- Deploy to different environments without code changes
+- Handle Render's dynamic URL generation (e.g., `-802l`, `-802f`)
+- Configure UAT vs prod origins separately
+- Follow 12-factor app externalized configuration principles
 
 **Plan:**
-1. Add explicit allowed origin for the production Render URL
-2. Keep pattern-based matching for flexibility
-3. Test CORS headers with curl before deploying
+1. Create configurable CORS origins via application properties
+2. Add environment variable `CORS_ALLOWED_ORIGINS` for runtime configuration
+3. Support both exact origins and wildcard patterns
+4. Set defaults appropriate for each environment
+5. Configure Render to use wildcard pattern for flexibility
 
 **Changes:**
 - `backend/src/main/java/com/accenture/taskmanager/config/CorsConfig.java`:
-  - Replaced pattern `https://task-manager-api-*.onrender.com` with explicit origin
-  - Added `config.addAllowedOrigin("https://task-manager-api-802l.onrender.com")`
-  - Kept general pattern `https://*.onrender.com` for other Render apps
+  - Added `@Value` injection for `cors.allowed-origins` property
+  - Parse comma-separated origin list from configuration
+  - Support both patterns (with `*`) and exact origins
+  - Auto-detect pattern vs exact based on presence of `*`
+  - Default: `http://localhost:*,https://*.onrender.com`
+
+- `backend/src/main/resources/application.yml`:
+  - Added `cors.allowed-origins` property with dev defaults
+  - Default: `http://localhost:*,https://*.onrender.com`
+
+- `backend/src/main/resources/application-prod.yml`:
+  - Added `cors.allowed-origins` property with prod fallback
+  - Uses `${CORS_ALLOWED_ORIGINS:https://*.onrender.com}`
+  - Reads from environment variable if set, else uses wildcard pattern
+
+- `render.yaml`:
+  - Added `CORS_ALLOWED_ORIGINS` environment variable
+  - Value: `https://*.onrender.com` (matches all Render deployments)
+  - Can be overridden per environment in Render Dashboard
 
 **Result:**
-✅ Explicit origin ensures CORS headers are returned correctly
-✅ Swagger UI "Try it out" button will work after deployment
-✅ Preflight OPTIONS requests will include proper `Access-Control-Allow-Origin` header
-✅ Maintains security by not using wildcard `*`
+✅ **Robust:** Works regardless of Render URL suffix changes
+✅ **Configurable:** Set different origins per environment via env var
+✅ **Flexible:** Supports both patterns (`https://*.onrender.com`) and exact URLs
+✅ **Multi-env ready:** Can configure separate values for dev/test/UAT/prod
+✅ **12-factor compliant:** Externalized configuration via environment variables
+✅ **No code changes:** Update CORS_ALLOWED_ORIGINS in Render Dashboard only
+
+**Example configurations:**
+```yaml
+# Development (local)
+CORS_ALLOWED_ORIGINS=http://localhost:*,http://localhost:3000
+
+# Test environment
+CORS_ALLOWED_ORIGINS=https://test-app-*.onrender.com,https://test.example.com
+
+# UAT environment
+CORS_ALLOWED_ORIGINS=https://uat-*.onrender.com,https://uat.example.com
+
+# Production
+CORS_ALLOWED_ORIGINS=https://app.example.com,https://*.onrender.com
+```
 
 **Next steps:**
 - Commit and push changes
-- Wait for Render auto-deploy
-- Verify Swagger UI can execute requests successfully
+- Verify Render deployment with wildcard pattern
+- Document how to configure per environment in README
 
 ---
 

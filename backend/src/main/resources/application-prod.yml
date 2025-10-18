@@ -141,6 +141,15 @@ management:
         enabled: true  # Enable liveness/readiness probes for Kubernetes/Render
 
 # ========================================
+# CORS Configuration (Production)
+# ========================================
+# Set via environment variable CORS_ALLOWED_ORIGINS
+# Example: https://task-manager-api-802l.onrender.com,https://app.example.com
+# Fallback: accepts all *.onrender.com subdomains
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://*.onrender.com}
+
+# ========================================
 # SpringDoc / OpenAPI Configuration
 # ========================================
 springdoc:
