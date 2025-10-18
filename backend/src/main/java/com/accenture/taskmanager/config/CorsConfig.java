@@ -43,8 +43,8 @@ public class CorsConfig {
         // Allow specific origins (localhost for dev, Render for production)
         // When allowCredentials=true, cannot use "*" - must be explicit
         config.addAllowedOriginPattern("http://localhost:*"); // Local development
-        config.addAllowedOriginPattern("https://*.onrender.com"); // Render deployments
-        config.addAllowedOriginPattern("https://task-manager-api-*.onrender.com"); // Specific app pattern
+        config.addAllowedOriginPattern("https://*.onrender.com"); // All Render deployments
+        config.addAllowedOrigin("https://task-manager-api-802l.onrender.com"); // Specific production URL
 
         // Allow all headers (Content-Type, Authorization, etc.)
         config.addAllowedHeader("*");

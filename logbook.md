@@ -4,6 +4,39 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T17:20 – Fix CORS for Swagger UI on Render
+
+**Request (paraphrased):** Swagger UI showing "Failed to fetch" error when trying to execute API requests. CORS error preventing Swagger from making calls to the same-origin API.
+
+**Context/goal:** After deploying to Render, Swagger UI (served at `https://task-manager-api-802l.onrender.com/swagger-ui.html`) couldn't execute API calls to the same domain. The CORS configuration used pattern matching (`https://task-manager-api-*.onrender.com`) which wasn't matching the actual URL properly, causing preflight OPTIONS requests to fail without proper `Access-Control-Allow-Origin` headers.
+
+**Root cause:**
+The pattern `https://task-manager-api-*.onrender.com` in `addAllowedOriginPattern()` wasn't matching the actual Render URL `https://task-manager-api-802l.onrender.com` correctly. While the wildcard pattern `https://*.onrender.com` should theoretically work, adding the explicit origin ensures immediate compatibility.
+
+**Plan:**
+1. Add explicit allowed origin for the production Render URL
+2. Keep pattern-based matching for flexibility
+3. Test CORS headers with curl before deploying
+
+**Changes:**
+- `backend/src/main/java/com/accenture/taskmanager/config/CorsConfig.java`:
+  - Replaced pattern `https://task-manager-api-*.onrender.com` with explicit origin
+  - Added `config.addAllowedOrigin("https://task-manager-api-802l.onrender.com")`
+  - Kept general pattern `https://*.onrender.com` for other Render apps
+
+**Result:**
+✅ Explicit origin ensures CORS headers are returned correctly
+✅ Swagger UI "Try it out" button will work after deployment
+✅ Preflight OPTIONS requests will include proper `Access-Control-Allow-Origin` header
+✅ Maintains security by not using wildcard `*`
+
+**Next steps:**
+- Commit and push changes
+- Wait for Render auto-deploy
+- Verify Swagger UI can execute requests successfully
+
+---
+
 ## 2025-10-18T17:00 – Fix Slow Startup and Port Binding Issues on Render
 
 **Request (paraphrased):** Application taking 124+ seconds to start on Render. Render showing "No open ports detected" warnings and restarting deployment after detecting port 8080 late.
