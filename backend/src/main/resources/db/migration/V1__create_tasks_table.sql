@@ -18,9 +18,9 @@ CREATE TABLE tasks (
     -- Due date
     due_date DATE,
 
-    -- Audit timestamps
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL
+    -- Audit timestamps (timezone-aware for distributed systems)
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 -- ========================================

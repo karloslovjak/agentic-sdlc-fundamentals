@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -75,14 +75,17 @@ class TaskMapperTest {
     @Test
     void testToResponse() {
         // Given
+        Instant createdAt = Instant.parse("2025-01-01T10:00:00Z");
+        Instant updatedAt = Instant.parse("2025-01-02T15:30:00Z");
+
         Task entity = Task.builder()
                 .id(1L)
                 .title("Test Task")
                 .description("Test Description")
                 .status(com.accenture.taskmanager.model.TaskStatus.DONE)
                 .dueDate(LocalDate.of(2025, 12, 31))
-                .createdAt(LocalDateTime.of(2025, 1, 1, 10, 0))
-                .updatedAt(LocalDateTime.of(2025, 1, 2, 15, 30))
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
                 .build();
 
         // When
@@ -96,13 +99,11 @@ class TaskMapperTest {
         assertThat(response.getStatus()).isEqualTo(com.accenture.taskmanager.api.model.TaskStatus.DONE);
         assertThat(response.getDueDate()).isEqualTo(LocalDate.of(2025, 12, 31));
 
-        // Check timestamp conversions
+        // Check timestamp conversions (Instant -> OffsetDateTime in UTC)
         assertThat(response.getCreatedAt()).isNotNull();
         assertThat(response.getUpdatedAt()).isNotNull();
-        assertThat(response.getCreatedAt().toLocalDateTime())
-                .isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 0));
-        assertThat(response.getUpdatedAt().toLocalDateTime())
-                .isEqualTo(LocalDateTime.of(2025, 1, 2, 15, 30));
+        assertThat(response.getCreatedAt()).isEqualTo(createdAt.atOffset(ZoneOffset.UTC));
+        assertThat(response.getUpdatedAt()).isEqualTo(updatedAt.atOffset(ZoneOffset.UTC));
     }
 
     @Test
@@ -114,8 +115,8 @@ class TaskMapperTest {
                 .description(null)
                 .status(com.accenture.taskmanager.model.TaskStatus.TODO)
                 .dueDate(LocalDate.of(2025, 3, 15))
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .build();
 
         // When
@@ -130,14 +131,17 @@ class TaskMapperTest {
     @Test
     void testUpdateEntityFromRequest() {
         // Given - existing entity
+        Instant createdAt = Instant.parse("2025-01-01T10:00:00Z");
+        Instant updatedAt = Instant.parse("2025-01-01T10:00:00Z");
+
         Task existingEntity = Task.builder()
                 .id(1L)
                 .title("Old Title")
                 .description("Old Description")
                 .status(com.accenture.taskmanager.model.TaskStatus.TODO)
                 .dueDate(LocalDate.of(2025, 1, 1))
-                .createdAt(LocalDateTime.of(2025, 1, 1, 10, 0))
-                .updatedAt(LocalDateTime.of(2025, 1, 1, 10, 0))
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
                 .build();
 
         // Given - update request
@@ -157,10 +161,8 @@ class TaskMapperTest {
         assertThat(existingEntity.getDescription()).isEqualTo("New Description");
         assertThat(existingEntity.getStatus()).isEqualTo(com.accenture.taskmanager.model.TaskStatus.IN_PROGRESS);
         assertThat(existingEntity.getDueDate()).isEqualTo(LocalDate.of(2025, 12, 31));
-        assertThat(existingEntity.getCreatedAt()).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 0)); // Preserved
-        assertThat(existingEntity.getUpdatedAt()).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 0)); // Preserved (will be
-                                                                                                  // updated by
-                                                                                                  // @PreUpdate)
+        assertThat(existingEntity.getCreatedAt()).isEqualTo(createdAt); // Preserved
+        assertThat(existingEntity.getUpdatedAt()).isEqualTo(updatedAt); // Preserved (will be updated by @PreUpdate)
     }
 
     @Test
@@ -172,8 +174,8 @@ class TaskMapperTest {
                 .description("Old Description")
                 .status(com.accenture.taskmanager.model.TaskStatus.TODO)
                 .dueDate(LocalDate.now())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .build();
 
         // Given - request with null description
@@ -228,25 +230,23 @@ class TaskMapperTest {
     }
 
     @Test
-    void testLocalDateTimeToOffsetDateTime() {
+    void testInstantToOffsetDateTime() {
         // Given
-        LocalDateTime localDateTime = LocalDateTime.of(2025, 6, 15, 14, 30, 45);
+        Instant instant = Instant.parse("2025-06-15T14:30:45Z");
 
         // When
-        OffsetDateTime offsetDateTime = taskMapper.localDateTimeToOffsetDateTime(localDateTime);
+        OffsetDateTime offsetDateTime = taskMapper.instantToOffsetDateTime(instant);
 
         // Then
         assertThat(offsetDateTime).isNotNull();
-        assertThat(offsetDateTime.toLocalDateTime()).isEqualTo(localDateTime);
-        // Offset should be system default (not necessarily UTC)
-        assertThat(offsetDateTime.getOffset())
-                .isEqualTo(ZoneOffset.systemDefault().getRules().getOffset(localDateTime));
+        assertThat(offsetDateTime.toInstant()).isEqualTo(instant);
+        assertThat(offsetDateTime.getOffset()).isEqualTo(ZoneOffset.UTC);
     }
 
     @Test
-    void testLocalDateTimeToOffsetDateTimeNull() {
+    void testInstantToOffsetDateTimeNull() {
         // When/Then
-        assertThat(taskMapper.localDateTimeToOffsetDateTime(null)).isNull();
+        assertThat(taskMapper.instantToOffsetDateTime(null)).isNull();
     }
 
     @Test
@@ -262,8 +262,8 @@ class TaskMapperTest {
         // When - convert to entity and back to response
         Task entity = taskMapper.toEntity(originalRequest);
         entity.setId(100L);
-        entity.setCreatedAt(LocalDateTime.now());
-        entity.setUpdatedAt(LocalDateTime.now());
+        entity.setCreatedAt(Instant.now());
+        entity.setUpdatedAt(Instant.now());
         TaskResponse response = taskMapper.toResponse(entity);
 
         // Then - verify data integrity

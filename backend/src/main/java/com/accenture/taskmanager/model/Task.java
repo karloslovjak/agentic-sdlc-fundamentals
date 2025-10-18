@@ -6,8 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Task entity - represents a task in the database.
@@ -74,24 +74,26 @@ public class Task {
     /**
      * Timestamp when the task was created.
      * Automatically set on persist.
+     * Uses Instant for timezone-independent audit trail.
      */
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     /**
      * Timestamp when the task was last updated.
      * Automatically updated on merge.
+     * Uses Instant for timezone-independent audit trail.
      */
     @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     /**
      * JPA callback: Set createdAt and updatedAt before persisting new entity.
      */
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
     }
 
     /**
@@ -99,7 +101,7 @@ public class Task {
      */
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
 
 }

@@ -5,9 +5,9 @@ import com.accenture.taskmanager.api.model.TaskResponse;
 import com.accenture.taskmanager.model.Task;
 import org.mapstruct.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 /**
  * MapStruct mapper for converting between API models and Entity.
@@ -51,13 +51,13 @@ public interface TaskMapper {
      *
      * Used when returning task data to the client.
      * Maps all entity fields to response fields.
-     * Converts LocalDateTime to OffsetDateTime for ISO 8601 compliance.
+     * Converts Instant to OffsetDateTime for ISO 8601 compliance.
      *
      * @param task the Task entity from database
      * @return TaskResponse for API output
      */
-    @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "localDateTimeToOffsetDateTime")
-    @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "localDateTimeToOffsetDateTime")
+    @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantToOffsetDateTime")
+    @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "instantToOffsetDateTime")
     TaskResponse toResponse(Task task);
 
     /**
@@ -78,21 +78,21 @@ public interface TaskMapper {
     void updateEntityFromRequest(TaskRequest request, @MappingTarget Task task);
 
     /**
-     * Custom mapping: Convert LocalDateTime to OffsetDateTime.
+     * Custom mapping: Convert Instant to OffsetDateTime.
      *
-     * LocalDateTime is used in entity (no timezone info).
+     * Instant is used in entity (timezone-independent, UTC-based).
      * OffsetDateTime is required by OpenAPI spec for ISO 8601 format.
-     * Uses system default timezone for conversion.
+     * Converts to UTC (ZoneOffset.UTC) for consistent API responses.
      *
-     * @param localDateTime the LocalDateTime from entity
-     * @return OffsetDateTime for API response
+     * @param instant the Instant from entity
+     * @return OffsetDateTime in UTC for API response
      */
-    @Named("localDateTimeToOffsetDateTime")
-    default OffsetDateTime localDateTimeToOffsetDateTime(LocalDateTime localDateTime) {
-        if (localDateTime == null) {
+    @Named("instantToOffsetDateTime")
+    default OffsetDateTime instantToOffsetDateTime(Instant instant) {
+        if (instant == null) {
             return null;
         }
-        return localDateTime.atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        return instant.atOffset(ZoneOffset.UTC);
     }
 
     /**

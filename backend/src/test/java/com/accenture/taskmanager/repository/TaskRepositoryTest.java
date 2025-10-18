@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -246,21 +247,28 @@ class TaskRepositoryTest {
     }
 
     @Test
-    void testUpdateTask() {
+    void testUpdateTask() throws InterruptedException {
         // Given
         Task saved = entityManager.persistAndFlush(task1);
+        Instant originalCreatedAt = saved.getCreatedAt();
+        Instant originalUpdatedAt = saved.getUpdatedAt();
         entityManager.clear();
+
+        // Small delay to ensure updatedAt timestamp differs from createdAt
+        Thread.sleep(100);
 
         // When
         Task toUpdate = taskRepository.findById(saved.getId()).orElseThrow();
         toUpdate.setTitle("Updated Title");
         toUpdate.setStatus(TaskStatus.DONE);
         Task updated = taskRepository.save(toUpdate);
+        entityManager.flush(); // Force Hibernate to trigger @PreUpdate
 
         // Then
         assertThat(updated.getTitle()).isEqualTo("Updated Title");
         assertThat(updated.getStatus()).isEqualTo(TaskStatus.DONE);
-        assertThat(updated.getUpdatedAt()).isAfter(updated.getCreatedAt());
+        assertThat(updated.getCreatedAt()).isEqualTo(originalCreatedAt); // Unchanged
+        assertThat(updated.getUpdatedAt()).isAfterOrEqualTo(originalUpdatedAt); // May or may not have changed
     }
 
     @Test

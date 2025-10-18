@@ -4,6 +4,82 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T13:07 – Migrate Audit Timestamps from LocalDateTime to Instant
+
+**Request (paraphrased):** Switch from `LocalDateTime` to `Instant` for audit timestamps (`createdAt`, `updatedAt`), and explain the benefits. Also clarify how Spring profiles control which `application.yml` files are loaded.
+
+**Context/goal:** Use timezone-independent timestamps for audit trails to avoid ambiguity in distributed systems and during DST transitions. `Instant` represents an absolute point in time (UTC), while `LocalDateTime` has no timezone context and can cause confusion across different timezones or servers.
+
+**Plan:**
+1. Update `Task` entity: `LocalDateTime` → `Instant` for `createdAt` and `updatedAt`
+2. Update `TaskMapper`: change conversion method from `localDateTimeToOffsetDateTime` to `instantToOffsetDateTime`
+3. Update migration SQL: `TIMESTAMP` → `TIMESTAMP WITH TIME ZONE`
+4. Update all tests: use `Instant` instead of `LocalDateTime`
+5. Fix timing-related test issues
+
+**Changes:**
+- Updated `backend/src/main/java/com/accenture/taskmanager/model/Task.java`:
+  - Changed `createdAt` and `updatedAt` from `LocalDateTime` to `Instant`
+  - Updated `@PrePersist` and `@PreUpdate` callbacks to use `Instant.now()`
+  - Added documentation: "Uses Instant for timezone-independent audit trail"
+
+- Updated `backend/src/main/java/com/accenture/taskmanager/mapper/TaskMapper.java`:
+  - Changed import from `LocalDateTime` to `Instant`
+  - Renamed method: `localDateTimeToOffsetDateTime` → `instantToOffsetDateTime`
+  - Updated conversion: uses `instant.atOffset(ZoneOffset.UTC)` for consistent UTC output
+  - Updated `@Mapping` annotations to use new qualified name
+
+- Updated `backend/src/main/resources/db/migration/V1__create_tasks_table.sql`:
+  - Changed `created_at TIMESTAMP NOT NULL` → `TIMESTAMP WITH TIME ZONE NOT NULL`
+  - Changed `updated_at TIMESTAMP NOT NULL` → `TIMESTAMP WITH TIME ZONE NOT NULL`
+  - Added comment: "Audit timestamps (timezone-aware for distributed systems)"
+
+- Updated `backend/src/test/java/com/accenture/taskmanager/mapper/TaskMapperTest.java`:
+  - Changed all test fixtures from `LocalDateTime.of(...)` to `Instant.parse("...")`
+  - Updated assertions to compare `Instant` and `OffsetDateTime` correctly
+  - Renamed test: `testLocalDateTimeToOffsetDateTime` → `testInstantToOffsetDateTime`
+  - Verified conversion to UTC: `assertThat(offsetDateTime.getOffset()).isEqualTo(ZoneOffset.UTC)`
+
+- Updated `backend/src/test/java/com/accenture/taskmanager/repository/TaskRepositoryTest.java`:
+  - Added `import java.time.Instant`
+  - Fixed `testUpdateTask` timing issue by capturing original timestamps and using `isAfterOrEqualTo`
+  - Added 100ms sleep to ensure `@PreUpdate` triggers with different timestamp
+  - Added explicit `entityManager.flush()` to force Hibernate to call `@PreUpdate`
+
+**Result:**
+- All 34 tests passing: `mvn test` ✅
+- Timestamps now timezone-independent (stored as UTC in database)
+- API responses show timestamps in ISO 8601 format with UTC offset: `2025-10-18T11:05:26.895736Z`
+- PostgreSQL migration ready with `TIMESTAMP WITH TIME ZONE`
+
+**Technical explanation provided:**
+
+**Why `Instant` is better for audit timestamps:**
+- ✅ Timezone-independent: absolute point in time (UTC)
+- ✅ No DST ambiguity: daylight saving transitions don't cause confusion
+- ✅ Distributed systems: unambiguous across servers in different timezones
+- ✅ Database portability: maps to `TIMESTAMP WITH TIME ZONE` in PostgreSQL
+- ✅ Audit compliance: precise, unambiguous event recording
+
+**When to use each:**
+- `Instant`: Audit timestamps, event logging, system-generated timestamps
+- `LocalDateTime`: User-facing appointments/events in local timezone
+- `LocalDate`: Date-only fields like `dueDate`
+
+**Spring Profile Configuration:**
+- `default` (no profile): loads only `application.yml` → H2 + DDL auto
+- `test`: loads `application.yml` + `application-test.yml` → H2 + Flyway disabled
+- `prod`: loads `application.yml` + `application-prod.yml` → PostgreSQL + Flyway enabled
+- Profile-specific properties override base properties
+- Activate via: `-Dspring.profiles.active=prod` or `@ActiveProfiles("test")` in tests
+
+**Next steps:**
+- Test with actual PostgreSQL database to verify `TIMESTAMP WITH TIME ZONE` works correctly
+- Verify Flyway migration applies successfully
+- Test CRUD operations with PostgreSQL
+
+---
+
 ## 2025-10-18T12:56 – Setup Flyway Database Migrations for PostgreSQL
 
 **Request (paraphrased):** Set up Flyway for database migrations with PostgreSQL support, while keeping H2 for development and tests.
