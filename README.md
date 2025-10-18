@@ -3,6 +3,8 @@
 > **Part of Accenture's "Agentic SDLC Fundamentals" Certification**
 >
 > This project is developed using **GitHub Copilot in Agent Mode** with **Claude Sonnet 4.5** as the primary AI model, demonstrating agentic software development practices and AI-assisted workflows.
+>
+> **Note:** Detailed development instructions and guidelines are provided in `.github/copilot-instructions.md`, which ensures alignment with project standards and provides context for AI-assisted development.
 
 A full-stack web application for managing tasks with CRUD operations, built with modern technologies and best practices.
 

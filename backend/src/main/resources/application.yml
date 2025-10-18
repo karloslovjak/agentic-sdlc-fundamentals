@@ -1,0 +1,92 @@
+# Application Configuration
+# Main configuration file for Task Manager application
+
+# ========================================
+# Server Configuration
+# ========================================
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ========================================
+# Database Configuration
+# ========================================
+spring:
+  # H2 In-Memory Database (Development)
+  # Lightweight database for local development
+  datasource:
+    url: jdbc:h2:mem:taskmanager
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+    # Production/Development database
+    # Uncomment and configure when using PostgreSQL
+    # url: jdbc:postgresql://localhost:5432/taskmanager
+    # username: taskmanager_user
+    # password: your_password_here
+
+  # H2 Console (Development only)
+  # Access at http://localhost:8080/h2-console
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # ========================================
+  # JPA / Hibernate Configuration
+  # ========================================
+  jpa:
+    # DDL auto mode: create-drop recreates schema on each startup (dev only)
+    # Use 'validate' in production, 'update' for careful schema evolution
+    hibernate:
+      ddl-auto: create-drop
+
+    # Show SQL queries in console (debug purposes)
+    show-sql: false
+
+    # JPA properties
+    properties:
+      hibernate:
+        # Format SQL for readability
+        format_sql: true
+
+        # Hibernate dialect (auto-detected from datasource)
+        # dialect: org.hibernate.dialect.PostgreSQLDialect
+
+      # Validation configuration - fail fast on validation errors
+      javax.persistence.validation.mode: auto
+
+  # ========================================
+  # Jackson JSON Configuration
+  # ========================================
+  jackson:
+    # Pretty print JSON responses (development)
+    serialization:
+      indent-output: true
+      write-dates-as-timestamps: false
+
+    # Date format for JSON serialization
+    date-format: "yyyy-MM-dd'T'HH:mm:ss"
+
+    # Ignore null values in JSON responses
+    default-property-inclusion: non_null
+
+# ========================================
+# Logging Configuration
+# ========================================
+logging:
+  # Logging levels
+  level:
+    root: INFO
+    com.accenture.taskmanager: DEBUG
+    org.springframework.web: INFO
+    org.springframework.data: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+  # Logging pattern with structured format
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
