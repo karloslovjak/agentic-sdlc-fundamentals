@@ -23,10 +23,12 @@ WORKDIR /app
 
 # Create non-root user for security
 RUN addgroup -S spring && adduser -S spring -G spring
-USER spring:spring
 
 # Copy the built jar from build stage
 COPY --from=build /app/target/*.jar app.jar
+
+# Switch to non-root user
+USER spring:spring
 
 # Expose port 8080
 EXPOSE 8080

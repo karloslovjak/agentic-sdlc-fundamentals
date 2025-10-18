@@ -17,15 +17,15 @@ server:
 # Database Configuration - PostgreSQL
 # ========================================
 # Environment variables override defaults:
-# - SPRING_DATASOURCE_URL (from Render's DATABASE_URL)
-# - SPRING_DATASOURCE_USERNAME (from Render)
-# - SPRING_DATASOURCE_PASSWORD (from Render)
+# Environment variables from Render (standard PostgreSQL env vars):
+# - PGHOST, PGPORT, PGDATABASE (automatically provided by Render)
+# - PGUSER, PGPASSWORD (automatically provided by Render)
 spring:
   datasource:
-    # Render.com provides these via environment variables
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/taskmanager}
-    username: ${SPRING_DATASOURCE_USERNAME:taskuser}
-    password: ${SPRING_DATASOURCE_PASSWORD:taskpass}
+    # Build JDBC URL from Render's standard PostgreSQL environment variables
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:taskmanager}
+    username: ${PGUSER:taskuser}
+    password: ${PGPASSWORD:taskpass}
     driver-class-name: org.postgresql.Driver
 
     # Connection pool settings for production

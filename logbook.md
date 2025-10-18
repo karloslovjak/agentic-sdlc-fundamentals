@@ -4,7 +4,58 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
-## 2025-10-18T15:20 – Achieve 100% Test Coverage with Proper Exclusions
+## 2025-10-18T15:50 – Fix DATABASE_URL Format Using Standard PostgreSQL Env Vars
+
+**Request (paraphrased):** Application failing to start on Render with JDBC URL error. Initial hacky solution with bash script questioned - is there a proper way?
+
+**Context/goal:** Render provides database connection details via standard PostgreSQL environment variables (`PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`). Use these directly in Spring Boot configuration instead of parsing a connection string with a bash script.
+
+**Plan:**
+1. Replace hacky bash script approach with standard PostgreSQL env vars
+2. Update render.yaml to expose individual database properties
+3. Update application-prod.yml to build JDBC URL from these variables
+4. Clean up unnecessary docker-entrypoint.sh script
+5. Keep Dockerfile simple and standard
+
+**Changes:**
+- **Modified** `render.yaml`:
+  - Changed from single `DATABASE_URL` to individual properties
+  - Uses Render's built-in database property exports: `host`, `port`, `database`, `user`, `password`
+  - Maps to standard PostgreSQL env vars: `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`
+
+- **Modified** `backend/src/main/resources/application-prod.yml`:
+  - Build JDBC URL using Spring's `${}` syntax: `jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}`
+  - Use standard PostgreSQL env vars instead of custom `SPRING_DATASOURCE_*` variables
+  - Cleaner, more portable configuration
+
+- **Reverted** `backend/Dockerfile`:
+  - Removed docker-entrypoint.sh script copy and chmod
+  - Back to simple `ENTRYPOINT ["java", "-jar", "app.jar"]`
+  - No URL parsing or manipulation needed
+
+- **Deleted** `backend/docker-entrypoint.sh`:
+  - Removed hacky bash script entirely
+  - No longer needed with proper env var usage
+
+**Why this is better:**
+- ✅ **Standard approach**: Uses PostgreSQL's conventional environment variables
+- ✅ **No string parsing**: Avoids fragile regex/sed operations
+- ✅ **Platform agnostic**: Works on any platform that provides these env vars (Render, Heroku, Railway, etc.)
+- ✅ **Simpler Dockerfile**: No custom scripts to maintain
+- ✅ **Better security**: No credential extraction logic in scripts
+- ✅ **12-factor app**: Follows proper externalized configuration principles
+
+**Result:**
+✅ Clean, production-grade database configuration
+✅ No hacky bash scripts
+✅ Standard PostgreSQL environment variable usage
+✅ Simpler, more maintainable codebase
+
+**Next steps:** Test deployment on Render with proper env var configuration.
+
+---
+
+## 2025-10-18T15:30 – Configure Render Deployment with Blueprint
 
 **Request (paraphrased):** Continue iterating to fix remaining coverage issues after JaCoCo configuration was enabled.
 
