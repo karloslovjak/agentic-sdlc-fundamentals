@@ -4,6 +4,56 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T14:29 – Create Comprehensive Service Layer Tests with Unhappy Paths
+
+**Request (paraphrased):** After explaining CORS mechanism, analyze test coverage for unhappy paths. Found service layer had zero tests, so create comprehensive TaskServiceTest.
+
+**Context/goal:** Service layer is critical business logic that was untested. Need to achieve 100% coverage with happy paths, unhappy paths (TaskNotFoundException), edge cases (null values, status transitions), and repository interaction verification.
+
+**Plan:**
+1. Create `TaskServiceTest.java` with Mockito for repository mocking
+2. Cover all service methods: getAllTasks, getTaskById, createTask, updateTask, deleteTask
+3. Happy paths: Verify successful operations with correct data flow
+4. Unhappy paths: Test TaskNotFoundException for get/update/delete on non-existent IDs
+5. Edge cases: Null description/dueDate, all status transitions, comprehensive field preservation
+6. Repository verification: Ensure correct method calls and no extra interactions
+7. Run tests and verify full suite passes
+
+**Changes:**
+- **Created** `backend/src/test/java/com/accenture/taskmanager/service/TaskServiceTest.java` (393 lines):
+  - 18 comprehensive test methods
+  - @ExtendWith(MockitoExtension.class) with @Mock TaskRepository
+  - Happy paths (6 tests): getAllTasks (empty/populated), getTaskById, createTask, updateTask, deleteTask
+  - Unhappy paths (3 tests): TaskNotFoundException for getTaskById(999L), updateTask(999L), deleteTask(999L)
+  - Edge cases (6 tests): null description/dueDate handling, TODO/IN_PROGRESS/DONE status transitions, complete field preservation
+  - Repository interaction (3 tests): verify exact method calls with `times(1)` and `verifyNoMoreInteractions`
+  - Helper method: `createTask(Long id, String title, TaskStatus status)` for test data generation
+- **Fixed** `backend/src/test/java/com/accenture/taskmanager/config/OpenApiConfigTest.java`:
+  - Updated assertion from `.contains("/api")` → `.doesNotContain("/api")`
+  - Added documentation explaining separation of concerns (server URL vs controller paths)
+
+**Result:**
+✅ All 63 tests passing (100% pass rate):
+- TaskServiceTest: 18/18 ✅ (NEW)
+- TaskRepositoryTest: 15/15 ✅
+- TaskMapperTest: 13/13 ✅
+- TaskControllerTest: 11/11 ✅
+- OpenApiConfigTest: 3/3 ✅ (fixed)
+- CorsConfigTest: 2/2 ✅
+- TaskManagerApplicationTests: 1/1 ✅
+
+**Test Coverage by Layer:**
+- Controller: 11 tests (happy/unhappy paths with MockMvc)
+- Service: 18 tests (happy/unhappy/edge/repository verification)
+- Repository: 15 tests (JPA query methods, custom queries)
+- Mapper: 13 tests (DTO ↔ Entity conversion, null handling)
+- Config: 5 tests (CORS, OpenAPI configuration)
+
+**Next steps:**
+Project now has comprehensive test coverage across all layers with extensive unhappy path testing. Service layer fully tested with business logic validation, exception handling, and repository interaction verification.
+
+---
+
 ## 2025-10-18T14:10 – Fix OpenApiConfig Server URL & Verify PostgreSQL Integration
 
 **Request (paraphrased):** OpenApiConfig had `/api` in server URL causing `/api/api/tasks` bug (actual root cause). Then test PostgreSQL setup and cross-check README accuracy.
