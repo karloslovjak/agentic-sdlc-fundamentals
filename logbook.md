@@ -52,7 +52,9 @@ Coverage evolution:
 **Build command:** `mvn clean verify`
 **Test evidence:** `[INFO] All coverage checks have been met.`
 
-**Next steps:** Commit all changes and push to trigger GitHub Actions pipeline validation.
+**Next steps:**
+- ✅ Commit all changes and push to trigger GitHub Actions pipeline validation
+- ⏭️ Set up Render deployment (render.yaml updated, ready for deployment)
 
 ---
 
