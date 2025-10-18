@@ -371,13 +371,18 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <!-- Exclude generated OpenAPI code from coverage reports -->
+                            <excludes>
+                                <exclude>com/accenture/taskmanager/api/model/**</exclude>
+                                <exclude>com/accenture/taskmanager/api/**Api.class</exclude>
+                                <exclude>com/accenture/taskmanager/TaskManagerApplication.class</exclude>
+                                <exclude>com/accenture/taskmanager/mapper/*Impl.class</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
 
-                    <!--
-                        Enforce 100% coverage requirement
-                        Uncomment when actual business logic is implemented
-                    -->
-                    <!--
+                    <!-- Enforce 100% coverage requirement -->
                     <execution>
                         <id>check</id>
                         <phase>verify</phase>
@@ -385,6 +390,13 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <!-- Exclude generated OpenAPI code from coverage checks -->
+                            <excludes>
+                                <exclude>com/accenture/taskmanager/api/model/**</exclude>
+                                <exclude>com/accenture/taskmanager/api/**Api.class</exclude>
+                                <exclude>com/accenture/taskmanager/TaskManagerApplication.class</exclude>
+                                <exclude>com/accenture/taskmanager/mapper/*Impl.class</exclude>
+                            </excludes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
@@ -404,7 +416,6 @@
                             </rules>
                         </configuration>
                     </execution>
-                    -->
                 </executions>
             </plugin>
 
