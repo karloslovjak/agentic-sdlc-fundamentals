@@ -20,13 +20,14 @@ import java.util.List;
  * - Global CORS configuration via CorsFilter bean
  * - Configurable via environment variable CORS_ALLOWED_ORIGINS
  * - Supports multiple environments (dev, test, UAT, prod)
- * - Allows credentials for authentication (future feature)
+ * - Credentials only allowed with exact origins (not wildcards, per CORS spec)
  *
  * Configuration:
  * - Set CORS_ALLOWED_ORIGINS env var with comma-separated origins
  * - Example:
  * "http://localhost:3000,https://app.example.com,https://uat.example.com"
- * - Patterns supported: use * for wildcards (e.g., "https://*.onrender.com")
+ * - Patterns supported: use * for wildcards (e.g., "https://**onrender.com")
+ * - NOTE: Wildcards disable credentials for security (CORS specification)
  */
 @Configuration
 public class CorsConfig {
@@ -49,12 +50,17 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allow credentials (cookies, authorization headers)
-        config.setAllowCredentials(true);
-
         // Parse and add allowed origins from configuration
         // Supports both exact origins and patterns (with wildcards)
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        boolean hasWildcard = origins.stream().anyMatch(o -> o.contains("*"));
+
+        // Only allow credentials if no wildcards are used
+        // (wildcard + credentials = security violation per CORS spec)
+        if (!hasWildcard) {
+            config.setAllowCredentials(true);
+        }
+
         for (String origin : origins) {
             String trimmed = origin.trim();
             if (trimmed.contains("*")) {

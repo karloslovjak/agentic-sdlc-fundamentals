@@ -4,6 +4,47 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T17:35 – Fix CORS Wildcard + Credentials Incompatibility
+
+**Request (paraphrased):** Still experiencing CORS errors with Swagger UI even after deploying the environment-variable based CORS configuration with `https://**onrender.com` wildcard pattern.
+
+**Context/goal:** Swagger UI on Render continues to fail with "Failed to fetch" errors despite the robust CORS configuration being deployed. Need to identify and fix the root cause of CORS rejection.
+
+**Root cause:**
+**CRITICAL SECURITY ISSUE**: Spring's CORS configuration had `setAllowCredentials(true)` combined with wildcard patterns (`addAllowedOriginPattern`). This is **explicitly prohibited** by the CORS specification:
+- Browsers reject responses that have both `Access-Control-Allow-Credentials: true` AND wildcard origins
+- This is a security measure to prevent credential leakage to arbitrary origins
+- The wildcard pattern `https://**onrender.com` was correct, but credentials setting made it invalid
+
+**Plan:**
+1. Conditionally enable credentials only when NO wildcards are present
+2. Detect wildcards in configured origins: check for `*` character
+3. If wildcards exist, disable credentials (security requirement)
+4. If only exact origins, enable credentials for future auth features
+5. Update documentation to explain the CORS spec constraint
+
+**Changes:**
+1. Modified `CorsConfig.java`:
+   - Added wildcard detection: `origins.stream().anyMatch(o -> o.contains("*"))`
+   - Conditional credentials: `if (!hasWildcard) { config.setAllowCredentials(true); }`
+   - Updated JavaDoc to explain CORS spec requirements
+   - Pattern remains `https://**onrender.com` for multi-level matching
+
+**Result:**
+- Code compiles successfully (mvn compile)
+- CORS logic now compliant with CORS specification
+- Wildcard patterns work (no credentials)
+- Exact origins enable credentials for future auth
+- Security maintained while supporting flexible deployment
+
+**Next steps:**
+1. Commit: `fix(cors): disable credentials with wildcards per CORS spec`
+2. Push to trigger Render deployment
+3. Verify Swagger UI works after deployment
+4. For production with auth: use exact origin instead of wildcard
+
+---
+
 ## 2025-10-18T17:20 – Make CORS Configuration Robust and Environment-Aware
 
 **Request (paraphrased):** Hardcoding the Render URL (`task-manager-api-802l.onrender.com`) is not robust. What if it changes to `802f` or any other suffix? How do we ensure configurability for multiple environments (dev, test, UAT, prod)?
