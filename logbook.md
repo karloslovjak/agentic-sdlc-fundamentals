@@ -4,6 +4,135 @@ This file tracks all significant development work, debugging sessions, and archi
 
 ---
 
+## 2025-10-18T16:00 – Restructure Documentation for Maintainability & Lowercase Naming
+
+**Request (paraphrased):** Reorganize documentation from monolithic README (422 lines) into focused, scannable guides following industry best practices. Later, remove deprecated docs and standardize all documentation filenames to lowercase.
+
+**Context/goal:** Main README became too long (422 lines) with mixed concerns: quick start, API docs, database schema, deployment instructions all in one file. Goal is to create professional documentation structure that's easy to navigate, maintain, and scales as project grows. Then cleanup by removing deprecated files and enforcing lowercase naming convention for consistency.
+
+**Plan:**
+1. Create `docs/` directory for project-wide documentation
+2. Extract database documentation → `docs/DATABASE.md`
+3. Extract API documentation → `docs/API.md`
+4. Create backend-specific guide → `backend/README.md`
+5. Simplify main `README.md` to overview + quick start + links
+6. Remove deprecated `backend/FLYWAY_GUIDE.md` (content now in database.md)
+7. Rename documentation to lowercase: `DATABASE.md` → `database.md`, `API.md` → `api.md`
+8. Update all cross-references throughout codebase
+9. Update logbook with restructuring and cleanup rationale
+
+**Changes:**
+- **Created** `docs/` directory for centralized documentation
+
+- **Created** `docs/database.md` (comprehensive database guide):
+  - Database options (H2 vs PostgreSQL)
+  - Complete schema documentation with column details
+  - Flyway migration guide and best practices
+  - Indexes and performance optimization
+  - Data types rationale (TIMESTAMP WITH TIME ZONE, etc.)
+  - Common SQL operations and queries
+  - Backup/restore procedures
+  - Troubleshooting section
+  - Future enhancement ideas
+
+- **Created** `docs/api.md` (complete API reference):
+  - All endpoints with request/response examples
+  - cURL examples for every operation
+  - Request/response schemas with validation rules
+  - Error handling and HTTP status codes
+  - Query parameter filtering examples
+  - OpenAPI/Swagger documentation
+  - CORS configuration details
+  - Health check endpoint
+  - Testing tools (cURL, Postman, HTTPie)
+  - Future enhancements (pagination, webhooks, etc.)
+
+- **Created** `backend/README.md` (backend development guide):
+  - Architecture overview (layered architecture diagram)
+  - Design patterns (Repository, Service, DTO, Mapper)
+  - Complete project structure with package responsibilities
+  - Setup and running instructions
+  - Test structure breakdown (63 tests by category)
+  - Code coverage requirements and reporting
+  - Development workflow (TDD, Git flow)
+  - Step-by-step "Adding New Features" tutorial
+  - Configuration profiles (dev vs prod)
+  - Logging guidelines
+  - Troubleshooting common issues
+  - Best practices checklist
+
+- **Removed** deprecated `backend/FLYWAY_GUIDE.md` (content migrated to `docs/database.md`)
+
+- **Renamed** documentation files to lowercase:
+  - `docs/DATABASE.md` → `docs/database.md`
+  - `docs/API.md` → `docs/api.md`
+  - `DEPLOYMENT.md` → `deployment.md`
+
+- **Updated** all cross-references to use lowercase filenames:
+  - `README.md`: Updated doc links and directory tree
+  - `docs/database.md`: Updated internal link to api.md
+  - `docs/api.md`: Updated internal link to database.md
+  - `backend/README.md`: Updated related documentation links
+  - All files: Updated deployment.md references
+
+- **Refactored** `README.md` (from 422 → ~180 lines):
+  - Kept: Project overview, quick start, tech stack summary
+  - Simplified: Technology stack (removed detailed explanations)
+  - Removed: Detailed database schema (→ docs/database.md)
+  - Removed: API examples (→ docs/api.md)
+  - Removed: Detailed deployment steps (→ DEPLOYMENT.md)
+  - Added: Clear "Documentation" section with links to all guides
+  - Added: Emojis for visual scanning
+  - Improved: Project structure shows all documentation
+  - Enhanced: Quick start commands more concise
+
+**Result:**
+✅ Documentation now follows industry best practices:
+
+**Before (monolithic):**
+```
+README.md (422 lines)
+├── Everything mixed together
+├── Hard to navigate
+├── Difficult to maintain
+└── Intimidating for newcomers
+```
+
+**After (structured & standardized):**
+```
+README.md (180 lines) ← Scannable overview + quick start
+├── Links to detailed guides
+│
+docs/
+├── database.md ← Schema, migrations, Flyway (lowercase)
+└── api.md ← Complete REST API reference (lowercase)
+│
+backend/
+└── README.md ← Backend architecture & development
+│
+deployment.md ← CI/CD setup (lowercase)
+```
+
+**Documentation Size:**
+- Main README: 422 → 180 lines (-58%)
+- Database guide: 0 → 450 lines (new)
+- API guide: 0 → 650 lines (new)
+- Backend guide: 0 → 580 lines (new)
+- **Total:** Better organized, more comprehensive, easier to navigate
+
+**Benefits:**
+✅ Main README is scannable (< 200 lines)
+✅ Deep-dive documentation available when needed
+✅ Each guide is focused on single concern
+✅ Easy to maintain (edit only relevant file)
+✅ Professional structure (scales as project grows)
+✅ Clear navigation (links between docs)
+
+**Next steps:**
+Documentation structure is now professional and maintainable. Future work could add frontend guide when frontend is implemented.
+
+---
+
 ## 2025-10-18T15:30 – Setup CI/CD Pipeline with GitHub Actions + Render.com
 
 **Request (paraphrased):** Setup continuous integration and deployment using GitHub Actions for build/test and Render.com for automatic deployment to production on every push.
